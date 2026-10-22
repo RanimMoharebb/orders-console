@@ -42,6 +42,25 @@ async function main() {
 
   console.log("Demo admin account ready.");
 
+  // Create a demo agent account with a hashed password.
+  const agentPasswordHash = await hash("Agent123!", 12);
+
+  await prisma.user.upsert({
+    where: { email: "agent@example.com" },
+    update: {
+      passwordHash: agentPasswordHash,
+      role: "AGENT",
+    },
+    create: {
+      email: "agent@example.com",
+      passwordHash: agentPasswordHash,
+      role: "AGENT",
+    },
+  });
+
+  console.log("Demo agent account ready.");
+
+
   // Clear existing orders so rerunning the seed produces a predictable dataset.
   await prisma.idempotencyRecord.deleteMany();
   await prisma.orderItem.deleteMany();
