@@ -534,7 +534,9 @@ tbody tr:hover {
 }
 
 .logout-button:hover {
-  background: #f4f7fc;
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
 }
 
 .login-page {
