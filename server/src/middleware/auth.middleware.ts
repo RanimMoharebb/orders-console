@@ -1,10 +1,10 @@
-
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
-
-const JWT_ISSUER = "orders-console-api";
-const JWT_AUDIENCE = "orders-console-client";
+import {
+  JWT_ISSUER,
+  JWT_AUDIENCE,
+} from "../lib/jwt-config";
 
 function getJwtSecret(): string | null {
   const secret = process.env.JWT_SECRET;
@@ -48,12 +48,13 @@ export async function requireAuth(
     });
 
     if (typeof payload === "string" || !payload.sub) {
-      res.status(401).json({ error: "Invalid or expired token." });
+      res.status(401).json({
+        error: "Invalid or expired token.",
+      });
       return;
     }
 
-    // Load the current user from the database so role changes
-    // take effect without waiting for an old token to expire.
+    // Load the current user so role changes take effect immediately.
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
       select: {
@@ -64,7 +65,9 @@ export async function requireAuth(
     });
 
     if (!user) {
-      res.status(401).json({ error: "Invalid or expired token." });
+      res.status(401).json({
+        error: "Invalid or expired token.",
+      });
       return;
     }
 
@@ -83,7 +86,9 @@ export function requireAdmin(
   next: NextFunction,
 ) {
   if (!req.user) {
-    res.status(401).json({ error: "Authentication required." });
+    res.status(401).json({
+      error: "Authentication required.",
+    });
     return;
   }
 
@@ -96,5 +101,3 @@ export function requireAdmin(
 
   next();
 }
-
-export { JWT_ISSUER, JWT_AUDIENCE };

@@ -7,6 +7,12 @@ type LoginResponse = {
   };
 };
 
+type DeleteResponse = {
+  message?: string;
+  deletedCount?: number;
+  error?: string;
+};
+
 async function login(
   email: string,
   password: string,
@@ -96,21 +102,66 @@ async function testAgentCanListOrders(
   console.log("PASS: Agent can still access the orders list.");
 }
 
+async function testAdministratorDeletion(
+  adminToken: string,
+): Promise<void> {
+  console.log("\n--- Test 4: Administrator deletion ---");
+  console.log(
+    "WARNING: This permanently deletes every CANCELLED order in the configured database.",
+  );
+
+  const response = await fetch(`${API_URL}/cancelled`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${adminToken}`,
+    },
+  });
+
+  console.log(`HTTP status: ${response.status}`);
+
+  const body = (await response.json()) as DeleteResponse;
+
+  if (response.status !== 200) {
+    throw new Error(
+      `Expected HTTP 200 for an administrator, received HTTP ${response.status}. Error: ${body.error ?? "No error details"}`,
+    );
+  }
+
+  if (
+    typeof body.deletedCount !== "number" ||
+    !Number.isInteger(body.deletedCount) ||
+    body.deletedCount < 0
+  ) {
+    throw new Error(
+      "Expected the response to contain a non-negative integer deletedCount.",
+    );
+  }
+
+  console.log(`Deleted cancelled orders: ${body.deletedCount}`);
+  console.log(
+    "PASS: Administrator was authorized to delete cancelled orders.",
+  );
+}
+
 async function main(): Promise<void> {
   const agentToken = await login(
     "agent@example.com",
     "Agent123!",
   );
 
-  console.log("Authenticated as the seeded agent.");
+  const adminToken = await login(
+    "admin@example.com",
+    "Admin123!",
+  );
+
+  console.log("Authenticated as the seeded agent and administrator.");
 
   await testUnauthenticatedDeletion();
   await testAgentDeletion(agentToken);
   await testAgentCanListOrders(agentToken);
+  await testAdministratorDeletion(adminToken);
 
-  console.log(
-    "\nAuthorization checks passed. Administrator deletion has not been tested yet.",
-  );
+  console.log("\nAll authorization checks passed.");
 }
 
 main().catch((error: unknown) => {
