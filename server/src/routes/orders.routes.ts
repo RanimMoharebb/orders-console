@@ -7,12 +7,13 @@ import {
   OrderCreationError,
 } from "../services/order.service";
 import { listOrders } from "../services/order-list.service";
+import { requireAuth } from "../middleware/auth.middleware";
 
 
 const router = Router();
 
 
-router.get("/", async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   const validation = orderQuerySchema.safeParse(req.query);
 
   if (!validation.success) {
@@ -39,7 +40,7 @@ router.get("/", async (req, res) => {
 });
 
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   const idempotencyKey = req.get("Idempotency-Key");
 
   if (!idempotencyKey || idempotencyKey.trim().length === 0) {
