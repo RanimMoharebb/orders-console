@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma";
 import { Router } from "express";
 import { createOrderSchema } from "../schemas/order.schema";
 import { orderQuerySchema } from "../schemas/order-query.schema";
@@ -7,11 +8,37 @@ import {
   OrderCreationError,
 } from "../services/order.service";
 import { listOrders } from "../services/order-list.service";
-import { requireAuth } from "../middleware/auth.middleware";
+import { 
+  requireAuth,
+  requireAdmin,
+ } from "../middleware/auth.middleware";
 
 
 const router = Router();
 
+
+// Permanently delete cancelled orders.
+// Both authentication and administrator authorization are enforced server-side.
+router.delete("/cancelled", requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    const result = await prisma.order.deleteMany({
+      where: {
+        status: "CANCELLED",
+      },
+    });
+
+    res.status(200).json({
+      message: "Cancelled orders deleted successfully.",
+      deletedCount: result.count,
+    });
+  } catch (error) {
+    console.error("Failed to delete cancelled orders:", error);
+
+    res.status(500).json({
+      error: "An unexpected error occurred while deleting cancelled orders.",
+    });
+  }
+});
 
 router.get("/", requireAuth, async (req, res) => {
   const validation = orderQuerySchema.safeParse(req.query);
