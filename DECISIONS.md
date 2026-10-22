@@ -30,5 +30,11 @@
 
 ## AI Tool Disclosure
 
-ChatGPT was used for implementation guidance, debugging, and documentation support. Claude was used to review the code and identify potential issues. The implementation was verified through local builds, manual API/UI checks, and automated idempotency and authorization tests. 
+ChatGPT was used for implementation guidance, debugging, and documentation support. Claude was used to review the code and identify potential issues.
+
+Google Antigravity was used for the last two major refactors in the project:
+1. **Frontend Refactoring & UI Alignment**: Modularizing the monolithic Dashboard into single-responsibility components (`OrdersFilters`, `OrdersTable`, `OrdersPagination`), adding custom hooks (`useOrders`, `useDebounce`, `useBodyScrollLock`), an accessible `Modal` component, a top-level `ErrorBoundary`, a unified typed `apiClient` with automatic JWT handling and error parsing, aligning action buttons precisely with design screenshots, and removing unused assets.
+2. **Backend Refactoring & Clean Architecture**: Introducing a centralized configuration layer (`config/env.ts`), a dedicated controllers layer (`auth.controller.ts`, `orders.controller.ts`), a standardized HTTP error hierarchy (`errors/http-errors.ts`), and global error/404 handling middleware (`error.middleware.ts`) to eliminate route try/catch boilerplate and guarantee consistent JSON responses.
+
+The implementation was verified through local builds, manual API/UI checks, and automated idempotency and authorization tests.
 

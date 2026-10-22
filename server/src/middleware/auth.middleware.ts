@@ -1,26 +1,13 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
-import {
-  JWT_ISSUER,
-  JWT_AUDIENCE,
-} from "../lib/jwt-config";
-
-function getJwtSecret(): string | null {
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret || secret.length < 32) {
-    return null;
-  }
-
-  return secret;
-}
+import { env, JWT_ISSUER, JWT_AUDIENCE } from "../config/env";
 
 export async function requireAuth(
   req: Request,
   res: Response,
   next: NextFunction,
-) {
+): Promise<void> {
   const authorization = req.get("Authorization");
   const [scheme, token] = authorization?.split(" ") ?? [];
 
@@ -31,9 +18,7 @@ export async function requireAuth(
     return;
   }
 
-  const secret = getJwtSecret();
-
-  if (!secret) {
+  if (!env.isJwtSecretValid()) {
     res.status(500).json({
       error: "Authentication is not configured correctly.",
     });
@@ -41,7 +26,7 @@ export async function requireAuth(
   }
 
   try {
-    const payload = jwt.verify(token, secret, {
+    const payload = jwt.verify(token, env.JWT_SECRET!, {
       algorithms: ["HS256"],
       issuer: JWT_ISSUER,
       audience: JWT_AUDIENCE,
@@ -84,7 +69,7 @@ export function requireAdmin(
   req: Request,
   res: Response,
   next: NextFunction,
-) {
+): void {
   if (!req.user) {
     res.status(401).json({
       error: "Authentication required.",

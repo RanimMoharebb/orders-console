@@ -1,2 +1,1 @@
-export const JWT_ISSUER = "orders-console-api";
-export const JWT_AUDIENCE = "orders-console-client";
+export { JWT_ISSUER, JWT_AUDIENCE } from "../config/env";

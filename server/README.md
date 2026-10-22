@@ -26,11 +26,19 @@ server/
 │   ├── schema.prisma
 │   └── seed.ts
 ├── src/
+│   ├── config/
+│   │   └── env.ts
+│   ├── controllers/
+│   │   ├── auth.controller.ts
+│   │   └── orders.controller.ts
+│   ├── errors/
+│   │   └── http-errors.ts
 │   ├── lib/
 │   │   ├── jwt-config.ts
 │   │   └── prisma.ts
 │   ├── middleware/
 │   │   ├── auth.middleware.ts
+│   │   ├── error.middleware.ts
 │   │   └── validate.middleware.ts
 │   ├── routes/
 │   │   ├── auth.routes.ts
@@ -55,15 +63,16 @@ server/
 
 ## Architecture
 
-The backend separates HTTP handling, request validation, authentication, application logic, and database access.
+The backend separates configuration, routing, controllers, request validation, authentication, application logic, and database access.
 
 A typical request follows this flow:
 
-1. The request reaches an Express route.
-2. Applicable middleware performs authentication and request validation.
-3. The route invokes the relevant service.
-4. The service performs the required application operation using Prisma.
-5. The API returns the appropriate HTTP response.
+1. The request reaches an Express route in `routes/`.
+2. Applicable middleware in `middleware/` performs authentication and request validation.
+3. The route delegates execution to a controller in `controllers/`.
+4. The controller invokes the relevant service in `services/`.
+5. The service performs the required application operation using Prisma.
+6. Handlers return structured JSON responses, and any thrown `HttpError` is caught by `error.middleware.ts` for uniform error serialization.
 
 The exact flow depends on the endpoint. Public login requests do not require an authenticated user, while protected order operations require authentication. Cancelled-order deletion additionally requires administrator authorization.
 

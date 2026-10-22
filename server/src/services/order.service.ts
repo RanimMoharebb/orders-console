@@ -2,20 +2,12 @@ import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { CreateOrderInput } from "../schemas/order.schema";
 import { prisma } from "../lib/prisma";
+import {
+  IdempotencyConflictError,
+  OrderCreationError,
+} from "../errors/http-errors";
 
-export class IdempotencyConflictError extends Error {
-  constructor() {
-    super("This idempotency key has already been used with a different request.");
-    this.name = "IdempotencyConflictError";
-  }
-}
-
-export class OrderCreationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "OrderCreationError";
-  }
-}
+export { IdempotencyConflictError, OrderCreationError };
 
 const MAX_TOTAL_AMOUNT_CENTS = 2_000_000_000;
 
@@ -31,10 +23,7 @@ function calculateTotal(items: CreateOrderInput["items"]): number {
 
     total += itemTotal;
 
-    if (
-      !Number.isSafeInteger(total) ||
-      total > MAX_TOTAL_AMOUNT_CENTS
-    ) {
+    if (!Number.isSafeInteger(total) || total > MAX_TOTAL_AMOUNT_CENTS) {
       throw new OrderCreationError("The order total exceeds the allowed limit.");
     }
   }

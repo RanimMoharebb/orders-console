@@ -1,34 +1,13 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
+import { env, JWT_ISSUER, JWT_AUDIENCE } from "../config/env";
 import {
-  JWT_ISSUER,
-  JWT_AUDIENCE,
-} from "../lib/jwt-config";
+  AuthenticationConfigurationError,
+  InvalidCredentialsError,
+} from "../errors/http-errors";
 
-export class AuthenticationConfigurationError extends Error {
-  constructor() {
-    super("Authentication is not configured correctly.");
-    this.name = "AuthenticationConfigurationError";
-  }
-}
-
-export class InvalidCredentialsError extends Error {
-  constructor() {
-    super("Invalid email or password.");
-    this.name = "InvalidCredentialsError";
-  }
-}
-
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret || secret.length < 32) {
-    throw new AuthenticationConfigurationError();
-  }
-
-  return secret;
-}
+export { AuthenticationConfigurationError, InvalidCredentialsError };
 
 export async function login(email: string, password: string) {
   const user = await prisma.user.findUnique({
@@ -39,7 +18,7 @@ export async function login(email: string, password: string) {
     throw new InvalidCredentialsError();
   }
 
-  const secret = getJwtSecret();
+  const secret = env.getRequiredJwtSecret();
 
   const token = jwt.sign(
     { role: user.role },
