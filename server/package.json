@@ -10,7 +10,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "test:idempotency": "tsx tests/idempotency.test.ts",
-    "test:authorization": "tsx tests/authorization.test.ts"
+    "test:authorization": "tsx tests/authorization.test.ts",
+    "test:admin-middleware": "tsx tests/require-admin.test.ts"
   },
   "keywords": [],
   "author": "",
