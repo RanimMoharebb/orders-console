@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "test:idempotency": "tsx tests/idempotency.test.ts"
+    "test:idempotency": "tsx tests/idempotency.test.ts",
+    "test:authorization": "tsx tests/authorization.test.ts"
   },
   "keywords": [],
   "author": "",
