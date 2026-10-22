@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import './App.css'
 
 type OrderStatus =
@@ -45,6 +45,12 @@ const moneyFormatter = new Intl.NumberFormat('en-US', {
 })
 
 function App() {
+  const [token, setToken] = useState<string | null>(null)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [loginError, setLoginError] = useState('')
+
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [sortBy, setSortBy] = useState('createdAt')
@@ -64,7 +70,56 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setLoginLoading(true)
+    setLoginError('')
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error ?? 'Login failed.')
+      }
+
+      const accessToken = result.data?.token
+
+      if (typeof accessToken !== 'string' || !accessToken) {
+        throw new Error('The server did not return an access token.')
+      }
+
+      setToken(accessToken)
+      setPassword('')
+      setLoginError('')
+    } catch (err) {
+      setLoginError(
+        err instanceof Error
+          ? err.message
+          : 'An unexpected error occurred during login.',
+      )
+    } finally {
+      setLoginLoading(false)
+    }
+  }
+
+
   useEffect(() => {
+
+    if (!token) {
+      // setLoading(false) 
+      // setOrders([]) 
+      return
+    }
+
     const controller = new AbortController()
     let ignore = false
 
@@ -90,11 +145,18 @@ function App() {
       try {
         const response = await fetch(`/api/orders?${params}`, {
           signal: controller.signal,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         })
 
         const result = await response.json()
 
         if (!response.ok) {
+          if (response.status === 401) {
+            setLoginError('Your session has expired. Please log in again.')
+            setToken(null)
+          }
           throw new Error(
             result.error ?? 'Failed to retrieve orders.',
           )
@@ -126,7 +188,8 @@ function App() {
       ignore = true
       controller.abort()
     }
-  }, [search, status, sortBy, sortOrder, page, pageSize, retryCount])
+  }, [search, status, sortBy, sortOrder, page, pageSize, retryCount, token])
+
 
   function changeSearch(value: string) {
     setSearch(value)
@@ -150,6 +213,72 @@ function App() {
 
   const lastOrder = Math.min(page * pageSize, pagination.total)
 
+  if (!token) {
+    return (
+      <main className="app-shell">
+        <header className="topbar">
+          <a className="brand" href="/" aria-label="Orders Console home">
+            <span className="brand-icon">O</span>
+            <span>Orders Console</span>
+          </a>
+          <span className="environment-label">LOCAL ENVIRONMENT</span>
+        </header>
+
+        <section className="login-page">
+          <form className="login-card" onSubmit={handleLogin}>
+            <p className="eyebrow">OPERATIONS / SECURE ACCESS</p>
+            <h1>Welcome back</h1>
+            <p className="login-description">
+              Sign in to access the orders console.
+            </p>
+
+            {loginError && (
+              <div className="login-error" role="alert">
+                {loginError}
+              </div>
+            )}
+
+            <label className="login-field">
+              <span>Email address</span>
+              <input
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="admin@example.com"
+                required
+              />
+            </label>
+
+            <label className="login-field">
+              <span>Password</span>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Enter your password"
+                required
+              />
+            </label>
+
+            <button
+              className="login-button"
+              type="submit"
+              disabled={loginLoading}
+            >
+              {loginLoading ? 'Signing in...' : 'Sign in'}
+            </button>
+
+            <p className="login-footnote">
+              Use your seeded administrator account for local testing.
+            </p>
+          </form>
+        </section>
+      </main>
+    )
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -157,7 +286,21 @@ function App() {
           <span className="brand-icon">O</span>
           <span>Orders Console</span>
         </a>
-        <span className="environment-label">LOCAL ENVIRONMENT</span>
+        <div className="topbar-actions">
+          <span className="environment-label">LOCAL ENVIRONMENT</span>
+          <button
+            className="logout-button"
+            type="button"
+            onClick={() => {
+              setToken(null)
+              setPassword('')
+              setOrders([])
+              setLoginError('')
+            }}
+          >
+            Sign out
+          </button>
+        </div>
       </header>
 
       <section className="page-content">
