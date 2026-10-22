@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import ordersRouter from "./routes/orders.routes";
+
 
 const app = express();
 
@@ -12,5 +14,7 @@ app.get("/health", (_req, res) => {
     message: "Orders Console API is running",
   });
 });
+
+app.use("/api/orders", ordersRouter);
 
 export default app;
