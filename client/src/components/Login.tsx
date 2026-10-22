@@ -1,8 +1,5 @@
 import { useState, type FormEvent } from 'react'
-
-type LoginProps = {
-  onLoginSuccess: (token: string) => void
-}
+import type { LoginProps } from '../types'
 
 export function Login({ onLoginSuccess }: LoginProps) {
   const [email, setEmail] = useState('')
@@ -31,12 +28,18 @@ export function Login({ onLoginSuccess }: LoginProps) {
       }
 
       const accessToken = result.data?.token
+      const role = result.data?.user?.role
 
       if (typeof accessToken !== 'string' || !accessToken) {
         throw new Error('The server did not return an access token.')
       }
 
-      onLoginSuccess(accessToken)
+      if (role !== 'ADMIN' && role !== 'AGENT') {
+        throw new Error('The server returned an invalid user role.')
+      }
+
+      onLoginSuccess(accessToken, role)
+
     } catch (err) {
       setLoginError(
         err instanceof Error

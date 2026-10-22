@@ -1,37 +1,52 @@
-
 import { useState } from 'react'
 import { Dashboard } from './components/Dashboard'
 import { Login } from './components/Login'
+import type { AuthSession, UserRole } from './types'
+
 import './App.css'
 
 const TOKEN_KEY = 'accessToken'
+const ROLE_KEY = 'userRole'
 
 export function App() {
-  const [token, setToken] = useState<string | null>(
-    () => sessionStorage.getItem(TOKEN_KEY),
-  )
+const [session, setSession] = useState<AuthSession | null>(() => {
+const token = sessionStorage.getItem(TOKEN_KEY)
+const role = sessionStorage.getItem(ROLE_KEY) as UserRole | null
 
-  function handleLoginSuccess(accessToken: string) {
-    sessionStorage.setItem(TOKEN_KEY, accessToken)
-    setToken(accessToken)
-  }
 
-  function handleLogout() {
-    sessionStorage.removeItem(TOKEN_KEY)
-    setToken(null)
-  }
-  if (!token) {
-    return <Login onLoginSuccess={handleLoginSuccess} />
-  }
+if (!token || !role) {
+  sessionStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(ROLE_KEY)
+  return null
+}
 
-  return (
-    <Dashboard
-      token={token}
-      onLogout={handleLogout}
-    />
-  )
+return { token, role }
+
+
+})
+
+function handleLoginSuccess(token: string, role: UserRole) {
+sessionStorage.setItem(TOKEN_KEY, token)
+sessionStorage.setItem(ROLE_KEY, role)
+setSession({ token, role })
+}
+
+function handleLogout() {
+sessionStorage.removeItem(TOKEN_KEY)
+sessionStorage.removeItem(ROLE_KEY)
+setSession(null)
+}
+
+if (!session) {
+return <Login onLoginSuccess={handleLoginSuccess} />
+}
+
+return ( <Dashboard
+   token={session.token}
+   role={session.role}
+   onLogout={handleLogout}
+ />
+)
 }
 
 export default App
-
-

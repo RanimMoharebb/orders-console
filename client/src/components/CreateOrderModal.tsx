@@ -1,12 +1,9 @@
-import { useState, useEffect, type FormEvent } from 'react'
-import type { CreateOrderInput } from '../types'
+import { useEffect, useState, type FormEvent } from 'react'
 
-type CreateOrderModalProps = {
-  token: string
-  onClose: () => void
-  onOrderCreated: () => void
-  onSessionExpired: () => void
-}
+import type {
+  CreateOrderInput,
+  CreateOrderModalProps,
+} from '../types'
 
 const moneyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
