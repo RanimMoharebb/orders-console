@@ -1,13 +1,43 @@
 import { Router } from "express";
-import { ZodError } from "zod";
 import { createOrderSchema } from "../schemas/order.schema";
+import { orderQuerySchema } from "../schemas/order-query.schema";
 import {
   createOrder,
   IdempotencyConflictError,
   OrderCreationError,
 } from "../services/order.service";
+import { listOrders } from "../services/order-list.service";
+
 
 const router = Router();
+
+
+router.get("/", async (req, res) => {
+  const validation = orderQuerySchema.safeParse(req.query);
+
+  if (!validation.success) {
+    res.status(400).json({
+      error: "Invalid order query parameters.",
+      details: validation.error.issues.map((issue) => ({
+        field: issue.path.join("."),
+        message: issue.message,
+      })),
+    });
+    return;
+  }
+
+  try {
+    const result = await listOrders(validation.data);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to list orders:", error);
+
+    res.status(500).json({
+      error: "An unexpected error occurred while retrieving orders.",
+    });
+  }
+});
+
 
 router.post("/", async (req, res) => {
   const idempotencyKey = req.get("Idempotency-Key");
