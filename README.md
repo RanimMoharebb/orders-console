@@ -58,13 +58,28 @@ orders-console/
 │   ├── public/
 │   │   └── favicon.svg
 │   ├── src/
+│   │   ├── api/
+│   │   │   └── apiClient.ts
 │   │   ├── components/
+│   │   │   ├── common/
+│   │   │   │   ├── ErrorBoundary.tsx
+│   │   │   │   └── Modal.tsx
+│   │   │   ├── orders/
+│   │   │   │   ├── OrdersFilters.tsx
+│   │   │   │   ├── OrdersPagination.tsx
+│   │   │   │   └── OrdersTable.tsx
 │   │   │   ├── CreateOrderModal.tsx
 │   │   │   ├── Dashboard.tsx
 │   │   │   ├── DeleteCancelledOrdersModal.tsx
 │   │   │   └── Login.tsx
+│   │   ├── hooks/
+│   │   │   ├── useBodyScrollLock.ts
+│   │   │   ├── useDebounce.ts
+│   │   │   └── useOrders.ts
 │   │   ├── types/
 │   │   │   └── index.ts
+│   │   ├── utils/
+│   │   │   └── formatters.ts
 │   │   ├── App.css
 │   │   ├── App.tsx
 │   │   ├── index.css

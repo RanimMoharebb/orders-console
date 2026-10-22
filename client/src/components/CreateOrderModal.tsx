@@ -1,14 +1,12 @@
-import { useEffect, useState, type FormEvent } from 'react'
-
+import { useMemo, useState, type FormEvent } from 'react'
+import { request, ApiError } from '../api/apiClient'
 import type {
   CreateOrderInput,
   CreateOrderModalProps,
+  CreateOrderPayload,
 } from '../types'
-
-const moneyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-})
+import { formatCurrency } from '../utils/formatters'
+import { Modal } from './common/Modal'
 
 export function CreateOrderModal({
   token,
@@ -19,16 +17,6 @@ export function CreateOrderModal({
   const [createLoading, setCreateLoading] = useState(false)
   const [createError, setCreateError] = useState('')
 
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow
-
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = previousOverflow
-    }
-  }, [])
-  
   const [newOrder, setNewOrder] = useState<CreateOrderInput>({
     customerName: '',
     customerEmail: '',
@@ -40,6 +28,24 @@ export function CreateOrderModal({
       },
     ],
   })
+
+  const calculatedTotal = useMemo(() => {
+    return newOrder.items.reduce((total, item) => {
+      const quantity = Number(item.quantity)
+      const price = Number(item.unitPrice)
+
+      if (
+        !Number.isInteger(quantity) ||
+        quantity < 1 ||
+        !Number.isFinite(price) ||
+        price < 0
+      ) {
+        return total
+      }
+
+      return total + (quantity * Math.round(price * 100)) / 100
+    }, 0)
+  }, [newOrder.items])
 
   async function handleCreateOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -83,50 +89,27 @@ export function CreateOrderModal({
       return
     }
 
+    const payload: CreateOrderPayload = {
+      customerName: newOrder.customerName.trim(),
+      customerEmail: newOrder.customerEmail.trim(),
+      items,
+    }
+
     const idempotencyKey = crypto.randomUUID()
 
     try {
-      const response = await fetch('/api/orders', {
+      await request('/api/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          'Idempotency-Key': idempotencyKey,
-        },
-        body: JSON.stringify({
-          customerName: newOrder.customerName.trim(),
-          customerEmail: newOrder.customerEmail.trim(),
-          items,
-        }),
+        token,
+        idempotencyKey,
+        body: payload,
+        onUnauthorized: onSessionExpired,
       })
-
-      const result = await response.json()
-
-      if (response.status === 401) {
-        onSessionExpired()
-        return
-      }
-
-      if (!response.ok) {
-        const details = Array.isArray(result.details)
-          ? result.details
-              .map((issue: { field: string; message: string }) =>
-                `${issue.field}: ${issue.message}`,
-              )
-              .join(' ')
-          : ''
-
-        throw new Error(
-          [result.error ?? 'Failed to create the order.', details]
-            .filter(Boolean)
-            .join(' '),
-        )
-      }
 
       onOrderCreated()
     } catch (err) {
       setCreateError(
-        err instanceof Error
+        err instanceof ApiError || err instanceof Error
           ? err.message
           : 'An unexpected error occurred while creating the order.',
       )
@@ -135,25 +118,17 @@ export function CreateOrderModal({
     }
   }
 
-  const calculatedTotal = newOrder.items.reduce((total, item) => {
-    const quantity = Number(item.quantity)
-    const price = Number(item.unitPrice)
-
-    if (
-      !Number.isInteger(quantity) ||
-      quantity < 1 ||
-      !Number.isFinite(price) ||
-      price < 0
-    ) {
-      return total
-    }
-
-    return total + quantity * Math.round(price * 100) / 100
-  }, 0)
-
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true">
-    <section className="create-order-panel modal-panel" aria-labelledby="create-order-title">
+    <Modal
+      isOpen
+      onClose={() => {
+        if (!createLoading) {
+          onClose()
+        }
+      }}
+      titleId="create-order-title"
+      className="create-order-panel"
+    >
       <div className="create-order-heading">
         <div>
           <p className="eyebrow">NEW ORDER</p>
@@ -170,6 +145,7 @@ export function CreateOrderModal({
               type="text"
               maxLength={120}
               required
+              disabled={createLoading}
               value={newOrder.customerName}
               onChange={(event) =>
                 setNewOrder((current) => ({
@@ -187,6 +163,7 @@ export function CreateOrderModal({
               type="email"
               maxLength={254}
               required
+              disabled={createLoading}
               value={newOrder.customerEmail}
               onChange={(event) =>
                 setNewOrder((current) => ({
@@ -259,7 +236,10 @@ export function CreateOrderModal({
                       ...current,
                       items: current.items.map((existing, itemIndex) =>
                         itemIndex === index
-                          ? { ...existing, quantity: Number(event.target.value) }
+                          ? {
+                              ...existing,
+                              quantity: Number(event.target.value),
+                            }
                           : existing,
                       ),
                     }))
@@ -313,7 +293,7 @@ export function CreateOrderModal({
 
         <div className="order-total">
           <span>Order total</span>
-          <strong>{moneyFormatter.format(calculatedTotal)}</strong>
+          <strong>{formatCurrency(calculatedTotal)}</strong>
         </div>
 
         {createError && (
@@ -341,7 +321,6 @@ export function CreateOrderModal({
           </button>
         </div>
       </form>
-    </section>
-    </div>
+    </Modal>
   )
 }

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import type { LoginProps } from '../types'
+import { request, ApiError } from '../api/apiClient'
+import type { ApiResponse, LoginProps, LoginResponseData } from '../types'
 
 export function Login({ onLoginSuccess }: LoginProps) {
   const [email, setEmail] = useState('')
@@ -13,19 +14,13 @@ export function Login({ onLoginSuccess }: LoginProps) {
     setLoginError('')
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const result = await request<ApiResponse<LoginResponseData>>(
+        '/api/auth/login',
+        {
+          method: 'POST',
+          body: { email, password },
         },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error ?? 'Login failed.')
-      }
+      )
 
       const accessToken = result.data?.token
       const role = result.data?.user?.role
@@ -39,10 +34,9 @@ export function Login({ onLoginSuccess }: LoginProps) {
       }
 
       onLoginSuccess(accessToken, role)
-
     } catch (err) {
       setLoginError(
-        err instanceof Error
+        err instanceof ApiError || err instanceof Error
           ? err.message
           : 'An unexpected error occurred during login.',
       )

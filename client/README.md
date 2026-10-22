@@ -8,11 +8,11 @@ The application communicates with the Express backend through HTTP requests. It 
 
 ## Technology Stack
 
-* React
+* React 19
 * TypeScript
 * Vite
-* CSS
-* Fetch API for HTTP communication
+* Vanilla CSS
+* Fetch API with unified HTTP client abstraction
 
 ## Project Structure
 
@@ -21,83 +21,123 @@ client/
 ├── public/
 │   └── favicon.svg
 ├── src/
+│   ├── api/
+│   │   └── apiClient.ts
 │   ├── components/
+│   │   ├── common/
+│   │   │   ├── ErrorBoundary.tsx
+│   │   │   └── Modal.tsx
+│   │   ├── orders/
+│   │   │   ├── OrdersFilters.tsx
+│   │   │   ├── OrdersPagination.tsx
+│   │   │   └── OrdersTable.tsx
 │   │   ├── CreateOrderModal.tsx
 │   │   ├── Dashboard.tsx
 │   │   ├── DeleteCancelledOrdersModal.tsx
 │   │   └── Login.tsx
+│   ├── hooks/
+│   │   ├── useBodyScrollLock.ts
+│   │   ├── useDebounce.ts
+│   │   └── useOrders.ts
 │   ├── types/
 │   │   └── index.ts
+│   ├── utils/
+│   │   └── formatters.ts
 │   ├── App.css
 │   ├── App.tsx
 │   ├── index.css
 │   └── main.tsx
+├── eslint.config.js
+├── index.html
 ├── package.json
+├── tsconfig.app.json
 ├── tsconfig.json
+├── tsconfig.node.json
 └── vite.config.ts
 ```
 
 ## Architecture
 
-The frontend is organized around React components, with each component responsible for a specific part of the interface.
+The frontend follows modular component architecture, the Single Responsibility Principle (SRP), and clean separation of concerns.
 
 ### Application Entry Point
 
-* `main.tsx` initializes the React application and mounts it in the browser.
-* `App.tsx` is the root application component and coordinates the main application view.
-* `App.css` and `index.css` contain application and global styling.
+* `main.tsx` initializes the React application and mounts it in the browser inside React StrictMode.
+* `App.tsx` is the root component wrapped in an `ErrorBoundary`. It manages session persistence via `sessionStorage` and conditionally renders `Login` or `Dashboard`.
+* `App.css` and `index.css` contain design tokens, layout definitions, responsive rules, and component styles.
 
-### Components
+### Core Modules
 
-**Login.tsx**
+**api/apiClient.ts**
 
-Provides the login interface and submits credentials to the backend. After successful authentication, the application uses the returned access token for protected API requests.
+Centralized HTTP client wrapping `fetch` with strict typing. Handles:
+* Automatic `Authorization: Bearer <token>` header injection.
+* Optional `Idempotency-Key` header injection.
+* Centralized 401 session expiration callback.
+* Non-JSON response fallback and parsing safety.
+* Extraction of Zod validation details into human-readable messages.
 
-**Dashboard.tsx**
+**components/common/ErrorBoundary.tsx**
 
-Displays and manages the order list. It handles the order-list interface, search and filter controls, sorting, pagination, and the actions available to the authenticated user.
+Class-based error boundary that intercepts uncaught render exceptions, prevents white-screen crashes, displays user-friendly recovery instructions, and provides a "Reload Console" action.
 
-Order-list requests use server-side pagination and filtering rather than loading the entire dataset into the browser. Request cleanup and cancellation help prevent outdated requests from replacing newer results.
+**components/common/Modal.tsx**
 
-**CreateOrderModal.tsx**
+Accessible dialog shell with `Escape` key listeners, backdrop dismissal, ARIA attributes (`aria-modal="true"`, `role="dialog"` or `role="alertdialog"`), and background scroll lock integration.
 
-Provides the form for creating an order. Client-side validation helps users correct input before submission, while the backend remains responsible for validating the request and enforcing idempotency.
+**components/orders/OrdersFilters.tsx**
 
-**DeleteCancelledOrdersModal.tsx**
+Dedicated presentation component for search query inputs, order status dropdowns, and column sorting selectors.
 
-Provides the confirmation interface for the administrator's cancelled-order deletion action. The backend independently checks administrator authorization before performing the deletion.
+**components/orders/OrdersTable.tsx**
 
-### Shared Types
+Renders the orders table, customer initials avatars, status badges, tabular-aligned currency cells, and formatted timestamps. Manages loading spinners and empty search states.
 
-`types/index.ts` contains shared TypeScript definitions used by the frontend components.
+**components/orders/OrdersPagination.tsx**
 
-These definitions improve consistency when handling order data, API responses, and other shared application data.
+Provides page navigation buttons, rows-per-page selection (10, 25, 50, 100), and records counter display.
+
+**components/Dashboard.tsx**
+
+Orchestrator component connecting `useOrders` state to the filters, table, and pagination components, as well as coordinating the order creation and cancellation deletion modals.
+
+**components/CreateOrderModal.tsx**
+
+Provides the form for creating a new order with dynamic multi-item rows, client-side input validation, real-time total price calculation, and UUID-based idempotency key generation.
+
+**components/DeleteCancelledOrdersModal.tsx**
+
+Administrator confirmation dialog for permanently removing cancelled orders from the database.
+
+**components/Login.tsx**
+
+Authentication form that submits user credentials to `/api/auth/login` and validates the returned token and user role.
+
+### Custom Hooks
+
+* `useOrders.ts`: Encapsulates server-side query state (page, pageSize, debounced search, status, sort), data fetching, request cancellation via `AbortController`, and refresh triggers.
+* `useDebounce.ts`: Debounces user search queries (300ms) to prevent network flooding and unnecessary database queries while typing.
+* `useBodyScrollLock.ts`: Safely locks `document.body.style.overflow` when modals are active with reference counting.
+
+### Shared Utilities & Types
+
+* `utils/formatters.ts`: Reusable, centralized instances of `Intl.NumberFormat` (`formatCurrency`) and `Intl.DateTimeFormat` (`formatDate`).
+* `types/index.ts`: Strong TypeScript contracts covering orders, pagination metadata, API response envelopes, error structures, user roles, and form inputs.
 
 ## Data Flow
 
-The frontend communicates with the backend through HTTP requests.
+1. User actions in components trigger query state changes in `useOrders`.
+2. Input changes (like search) are debounced by `useDebounce` before firing network requests.
+3. Requests are executed through `apiClient.request<T>` with active `AbortController` cancellation for superseded requests.
+4. If a request returns `401 Unauthorized`, the session is automatically terminated and the user is redirected to Login.
+5. Successful responses update local state and are presented through decomposed UI components.
 
-1. The user interacts with a React component.
-2. The component sends a request to the appropriate API endpoint.
-3. The backend authenticates and validates the request where required.
-4. The backend processes the operation and returns a response.
-5. The frontend updates its interface based on the response.
+## Authentication & Persistence
 
-The frontend does not load all 50,000 orders at once. It requests the page and filters needed for the current view.
-
-## Authentication
-
-After a successful login, the frontend retains the access token in React application state and sends it in the `Authorization: Bearer <token>` header for protected requests.
-
-The token is not persisted in local storage or session storage. Consequently, refreshing the page clears the in-memory authentication state and requires the user to log in again.
-
-Frontend route and UI checks improve the user experience, but authorization is enforced by the backend.
-
-## Validation and Error Handling
-
-The frontend can validate form input before sending requests and display errors returned by the API.
-
-Client-side validation improves usability but does not replace backend validation. The server remains responsible for enforcing request rules, authentication, authorization, and idempotency.
+* After a successful login, the access token and user role are stored in `sessionStorage`.
+* Active sessions persist across tab refreshes within the same browser session.
+* Calling `onLogout()` or receiving an HTTP 401 clears `sessionStorage` and resets application state.
+* Authorization rules are enforced strictly on the backend.
 
 ## Development
 
@@ -113,7 +153,7 @@ Start the Vite development server:
 npm run dev
 ```
 
-Run the configured lint checks:
+Run lint checks:
 
 ```bash
 npm run lint
@@ -126,7 +166,3 @@ npm run build
 ```
 
 Run these commands from the `client/` directory.
-
-## Scope
-
-The frontend focuses on the user interface and interaction with the backend API. Database operations, request validation enforcement, idempotency, and access-control decisions remain backend responsibilities.

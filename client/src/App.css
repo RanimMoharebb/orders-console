@@ -53,7 +53,7 @@
 .page-heading {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 24px;
   margin-bottom: 28px;
 }
@@ -81,8 +81,9 @@
 }
 
 .total-card {
-  min-width: 150px;
-  padding: 16px 20px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 18px;
   background: #fff;
   border: 1px solid #e7ebf2;
   border-radius: 10px;
@@ -654,25 +655,54 @@ tbody tr:hover {
 /* Create order form */
 .heading-actions {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 175px;
+  flex-shrink: 0;
+}
+
+.heading-actions .create-order-button {
+  width: 100%;
+  box-sizing: border-box;
+  height: 38px;
+  min-height: 38px;
+  display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid #1d4ed8;
+  border-radius: 8px;
+  background: #1d4ed8;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.heading-actions .create-order-button:hover:not(:disabled) {
+  background: #1e40af;
+  border-color: #1e40af;
 }
 
 .create-order-button {
-  min-height: 39px;
-  padding: 0 15px;
-  border: 1px solid #285bd4;
-  border-radius: 7px;
-  background: #285bd4;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid #1d4ed8;
+  border-radius: 8px;
+  background: #1d4ed8;
   color: #fff;
   font: inherit;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .create-order-button:hover:not(:disabled) {
-  background: #204bb5;
+  background: #1e40af;
+  border-color: #1e40af;
 }
 
 .create-order-button:disabled {
@@ -927,22 +957,33 @@ tbody tr:hover {
 }
 
 .delete-cancelled-button {
-  padding: 10px 14px;
+  width: 100%;
+  box-sizing: border-box;
+  height: 38px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
   border: 1px solid #dc2626;
   border-radius: 8px;
   background: #ffffff;
   color: #dc2626;
   font: inherit;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
   transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .delete-cancelled-button:hover:not(:disabled) {
-  background: #dc2626;
-  color: #ffffff;
+  background: #fef2f2;
+  border-color: #b91c1c;
+  color: #b91c1c;
 }
 
 .delete-cancelled-button:disabled {

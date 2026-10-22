@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import type { DeleteCancelledOrdersModalProps } from '../types'
-
+import { request, ApiError } from '../api/apiClient'
+import type { ApiResponse, DeleteCancelledOrdersModalProps } from '../types'
+import { Modal } from './common/Modal'
 
 export function DeleteCancelledOrdersModal({
   token,
@@ -16,30 +17,16 @@ export function DeleteCancelledOrdersModal({
     setError('')
 
     try {
-      const response = await fetch('/api/orders/cancelled', {
+      const result = await request<ApiResponse>('/api/orders/cancelled', {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        token,
+        onUnauthorized: onSessionExpired,
       })
 
-      const result = await response.json()
-
-      if (response.status === 401) {
-        onSessionExpired()
-        return
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          result.error ?? 'Failed to delete cancelled orders.',
-        )
-      }
-
-      onDeleted(result.deletedCount)
+      onDeleted(result.deletedCount ?? 0)
     } catch (err) {
       setError(
-        err instanceof Error
+        err instanceof ApiError || err instanceof Error
           ? err.message
           : 'An unexpected error occurred.',
       )
@@ -49,64 +36,54 @@ export function DeleteCancelledOrdersModal({
   }
 
   return (
-    <div
-      className="modal-overlay"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (
-          event.target === event.currentTarget &&
-          !deleteLoading
-        ) {
+    <Modal
+      isOpen
+      onClose={() => {
+        if (!deleteLoading) {
           onClose()
         }
       }}
+      role="alertdialog"
+      titleId="delete-confirmation-title"
+      descriptionId="delete-confirmation-description"
+      className="delete-confirmation-panel"
     >
-      <section
-        className="modal-panel delete-confirmation-panel"
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="delete-confirmation-title"
-        aria-describedby="delete-confirmation-description"
-      >
-        <div className="delete-confirmation-icon" aria-hidden="true">
-          !
+      <div className="delete-confirmation-icon" aria-hidden="true">
+        !
+      </div>
+
+      <h2 id="delete-confirmation-title">Delete cancelled orders?</h2>
+
+      <p id="delete-confirmation-description">
+        This will permanently delete all cancelled orders from the database.
+        This action cannot be undone.
+      </p>
+
+      {error && (
+        <div className="error-message" role="alert">
+          {error}
         </div>
+      )}
 
-        <h2 id="delete-confirmation-title">
-          Delete cancelled orders?
-        </h2>
+      <div className="delete-confirmation-actions">
+        <button
+          type="button"
+          className="delete-cancel-button"
+          disabled={deleteLoading}
+          onClick={onClose}
+        >
+          Cancel
+        </button>
 
-        <p id="delete-confirmation-description">
-          This will permanently delete all cancelled orders from the
-          database. This action cannot be undone.
-        </p>
-
-        {error && (
-          <div className="error-message" role="alert">
-            {error}
-          </div>
-        )}
-
-        <div className="delete-confirmation-actions">
-          <button
-            type="button"
-            className="delete-cancel-button"
-            disabled={deleteLoading}
-            onClick={onClose}
-          >
-            Cancel
-          </button>
-
-          <button
-            type="button"
-            className="delete-confirm-button"
-            disabled={deleteLoading}
-            onClick={() => void handleDelete()}
-          >
-            {deleteLoading ? 'Deleting...' : 'Delete permanently'}
-          </button>
-        </div>
-      </section>
-    </div>
+        <button
+          type="button"
+          className="delete-confirm-button"
+          disabled={deleteLoading}
+          onClick={() => void handleDelete()}
+        >
+          {deleteLoading ? 'Deleting...' : 'Delete permanently'}
+        </button>
+      </div>
+    </Modal>
   )
 }
