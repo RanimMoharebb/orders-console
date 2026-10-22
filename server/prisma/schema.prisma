@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("AGENT")
+  createdAt    DateTime @default(now())
+
+  @@index([role])
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  customerName  String
+  customerEmail String
+  status        String   @default("PENDING")
+  totalAmountCents Int
+  createdAt     DateTime @default(now())
+
+  items              OrderItem[]
+  idempotencyRecords IdempotencyRecord[]
+
+  @@index([customerName])
+  @@index([customerEmail])
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@index([totalAmountCents])
+}
+
+model OrderItem {
+  id             String @id @default(cuid())
+  orderId        String
+  name           String
+  quantity       Int
+  unitPriceCents Int
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model IdempotencyRecord {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  requestHash String
+  orderId     String
+  createdAt   DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
