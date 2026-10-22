@@ -647,3 +647,243 @@ tbody tr:hover {
 }
 
 
+/* Create order stylying */
+
+/* Create order form */
+.heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.create-order-button {
+  min-height: 39px;
+  padding: 0 15px;
+  border: 1px solid #285bd4;
+  border-radius: 7px;
+  background: #285bd4;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.create-order-button:hover:not(:disabled) {
+  background: #204bb5;
+}
+
+.create-order-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.create-order-panel {
+  margin-bottom: 24px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e5eaf1;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgb(23 32 51 / 3%);
+}
+
+.create-order-heading {
+  margin-bottom: 24px;
+}
+
+.create-order-heading h2 {
+  margin: 0 0 6px;
+  color: #202b3d;
+  font-size: 20px;
+}
+
+.create-order-heading p:last-child {
+  margin: 0;
+  color: #718096;
+  font-size: 13px;
+}
+
+.create-order-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.create-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  color: #59677b;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.create-field input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 11px;
+  border: 1px solid #dce2eb;
+  border-radius: 7px;
+  background: #fff;
+  color: #253044;
+  font: inherit;
+  font-weight: 400;
+}
+
+.create-field input:focus {
+  outline: none;
+  border-color: #648ce9;
+  box-shadow: 0 0 0 3px rgb(40 91 212 / 8%);
+}
+
+.create-field input:disabled {
+  background: #f4f6fa;
+}
+
+.items-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.items-heading h3 {
+  margin: 0;
+  color: #253044;
+  font-size: 14px;
+}
+
+.secondary-button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid #dce2eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #445168;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: #f4f7fc;
+}
+
+.secondary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.order-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.order-item-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 100px 140px auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.remove-item-button {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid #f0c4c7;
+  border-radius: 6px;
+  background: #fff;
+  color: #a52c36;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.remove-item-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.order-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #edf0f5;
+  color: #59677b;
+  font-size: 13px;
+}
+
+.order-total strong {
+  color: #172033;
+  font-size: 20px;
+}
+
+.create-order-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.create-error,
+.create-success {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.create-error {
+  border: 1px solid #f0c4c7;
+  background: #fff0f0;
+  color: #a52c36;
+}
+
+.create-success {
+  margin-bottom: 18px;
+  border: 1px solid #b7e4c7;
+  background: #effaf2;
+  color: #167448;
+}
+
+@media (max-width: 800px) {
+  .heading-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .order-item-row {
+    grid-template-columns: minmax(0, 1fr) minmax(90px, 0.5fr);
+  }
+
+  .remove-item-button {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 520px) {
+  .create-order-panel {
+    padding: 18px;
+  }
+
+  .create-order-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .order-item-row {
+    grid-template-columns: 1fr;
+  }
+
+  .create-order-actions {
+    flex-direction: column-reverse;
+  }
+
+  .create-order-actions button {
+    width: 100%;
+  }
+}
