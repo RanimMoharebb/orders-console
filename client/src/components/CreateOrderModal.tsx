@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import type { CreateOrderInput } from '../types'
 
 type CreateOrderModalProps = {
@@ -22,6 +22,16 @@ export function CreateOrderModal({
   const [createLoading, setCreateLoading] = useState(false)
   const [createError, setCreateError] = useState('')
 
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [])
+  
   const [newOrder, setNewOrder] = useState<CreateOrderInput>({
     customerName: '',
     customerEmail: '',
@@ -145,7 +155,8 @@ export function CreateOrderModal({
   }, 0)
 
   return (
-    <section className="create-order-panel" aria-labelledby="create-order-title">
+    <div className="modal-overlay" role="dialog" aria-modal="true">
+    <section className="create-order-panel modal-panel" aria-labelledby="create-order-title">
       <div className="create-order-heading">
         <div>
           <p className="eyebrow">NEW ORDER</p>
@@ -334,5 +345,6 @@ export function CreateOrderModal({
         </div>
       </form>
     </section>
+    </div>
   )
 }
